@@ -177,3 +177,96 @@ Route::get('/ninjas/{id}', function ($id) {
 
 </html>
 ```
+
+## 5 - Layouts and Slots
+
+```php
+# /views/components/layout.php
+
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ninja Network</title>
+</head>
+
+<body>
+
+    <header>
+        <nav>
+            <h1>Ninja Network</h1>
+            <a href="/ninjas">See all warriors</a>
+            <br>
+            <a href="/ninjas/create">Add warrior</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        {{ $slot }}
+    </main>
+
+</body>
+
+</html>
+```
+
+```php
+# /views/components/index.php
+<x-layout>
+    <h2>Currently available Laravel Ninjas</h2>
+    @if ($greetings === 'Hello great warriors')
+        <p>Hi from inside the if statement</p>
+    @endif
+    <p>{{ $greetings }}</p>
+    <p>Click in each warrior to see details</p>
+    <ul>
+        @foreach ($ninjas as $ninja)
+            <li>
+                <a href="/ninjas/{{ $ninja['id'] }}">{{ $ninja['name'] }}</a>
+            </li>
+        @endforeach
+    </ul>
+</x-layout>
+```
+
+```php
+# /views/ninja.php
+<x-layout>
+    <h2>Single Ninja id = {{ $id }}</h2>
+</x-layout>
+```
+
+```php
+# /views/create.php
+
+<x-layout>
+    <h2>Add warrior</h2>
+
+    <form action="POST">
+        <label for="name">
+            Ninja name:
+            <input type="text" name="name" id="name">
+        </label>
+        <br>
+        <label for="country">
+            Country :
+            <input type="text" name="country" id="country">
+        </label>
+    </form>
+</x-layout>
+```
+
+```php
+# /routes/web.php
+
+Route::get('/ninjas/create', function () {
+    return view('ninjas.create');
+});
+
+Route::get('/ninjas/{id}', function ($id) {
+    # one can use $id to fetch record on the db
+    return view('ninjas.ninja', ["id" => $id]);
+});
+```
