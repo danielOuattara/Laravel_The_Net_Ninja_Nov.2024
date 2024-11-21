@@ -315,3 +315,127 @@ Route::get('/ninjas/{id}', function ($id) {
     </ul>
 </x-layout>
 ```
+
+## 7 - Adding CSS and TailwindCSS
+
+## 8 - Database migrations
+
+### Artisan Commands
+
+```sh
+# Check all artisan commands
+php artisan  
+
+# Get help with make commands
+php artisan make --help
+
+# Create a migration file for creating the 'todos' table
+php artisan make:migration create_todos_table
+
+# Check the status of all migrations
+php artisan migrate:status
+
+# Run the migrations to update the database
+php artisan migrate
+
+# Roll back the last batch of migrations
+php artisan migrate:rollback
+
+# Reset the database by rolling back all migrations
+php artisan migrate:reset
+
+```php
+# update the content of the newly created migration file
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('todos', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+            $table->string('title'); //<-- added
+            $table->boolean('completed'); //<-- added
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('todos');
+    }
+};
+```
+
+```sh
+# run the migration to the database
+php artisan migrate
+
+# check status (optional)
+php artisan migrate:status
+
+# undo the last database migration
+php artisan migrate:rollback
+
+# create a new migration: add a 'shareable' column the the todos table 
+php artisan make:migration add_shareable_to_todos_table --table=todos
+
+# Create a new migration: add a 'shareable' column to the todos table 
+php artisan make:migration add_shareable_to_todos_table --table=todos
+
+```
+
+```php
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('todos', function (Blueprint $table) {
+            $table->boolean('shareable')->default(false); // Add the column
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('todos', function (Blueprint $table) {
+            $table->dropColumn('shareable'); // Remove the column
+        });
+    }
+};
+
+```
+
+```sh
+# check status (optional)
+php artisan migrate:status
+
+# run the migration to the database
+php artisan migrate
+
+# undo the last database migration
+php artisan migrate:rollback
+```
