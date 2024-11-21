@@ -439,3 +439,159 @@ php artisan migrate
 # undo the last database migration
 php artisan migrate:rollback
 ```
+
+## 9 - Eloquent Models
+
+### Create a Model, Migration, Factory and Seed
+
+```sh
+# get some help for make:model
+php artisan make:model --help
+
+# create a Model + Migration + Factory + Seed
+php artisan make:model Ninja -mfs
+
+# output:
+   INFO  Model [app/Models/Ninja.php] created successfully.  
+
+   INFO  Factory [database/factories/NinjaFactory.php] created successfully.  
+
+   INFO  Migration [database/migrations/2024_11_21_133459_create_ninjas_table.php] created successfully.  
+
+   INFO  Seeder [database/seeders/NinjaSeeder.php] created successfully.  
+```
+
+### update the create Ninjas table Migration Up() function
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('ninjas', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+            $table->string('name'); // <- new 
+            $table->integer('skill'); // <- new
+            $table->text('bio'); // <- new
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('ninjas');
+    }
+};
+```
+
+### run a migration to the database
+
+```sh
+# check status
+php artisan migrate:status
+
+  Migration name .................................................................................................................... Batch / Status  
+  0001_01_01_000000_create_users_table ..................................................................................................... [1] Ran  
+  0001_01_01_000001_create_cache_table ..................................................................................................... [1] Ran  
+  0001_01_01_000002_create_jobs_table ...................................................................................................... [1] Ran  
+  2024_11_21_121028_create_todos_table ..................................................................................................... [2] Ran  
+  2024_11_21_133459_create_ninjas_table .................................................................................................... Pending
+
+# run the migration to the database
+php artisan migrate
+
+   INFO  Running migrations.  
+
+  2024_11_21_133459_create_ninjas_table ................................................................................................ 7.27ms DONE
+```
+
+### Working on the Model
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Ninja extends Model
+{
+
+    protected $fillable = ["name", "skill", "bio"]; // <-- New
+    /** @use HasFactory<\Database\Factories\NinjaFactory> */
+    use HasFactory;
+}
+```
+
+### Play with tinker tool
+
+```sh
+php artisan tinker
+
+# specify the namespace for a Model to be usable
+use App\Models\Ninja
+Ninja::create(['name'=> 'mario', 'skill'=> 76, 'bio' => 'lorem Lauren Lauraine'])
+
+# output:
+
+= App\Models\Ninja {#5216
+    name: "mario",
+    skill: 76,
+    bio: "lorem Lauren Lauraine",
+    updated_at: "2024-11-21 14:16:44",
+    created_at: "2024-11-21 14:16:44",
+    id: 1,
+  }
+
+# Add another
+Ninja::create(['name'=> 'yoshi', 'skill'=> 60, 'bio' => 'lorem Lauren Lauraine'])
+
+
+# Now fetch the document using the model
+Ninja::all()
+= Illuminate\Database\Eloquent\Collection {#5269
+    all: [
+      App\Models\Ninja {#5272
+        id: 1,
+        created_at: "2024-11-21 14:16:44",
+        updated_at: "2024-11-21 14:16:44",
+        name: "mario",
+        skill: 76,
+        bio: "lorem Lauren Lauraine",
+      },
+      App\Models\Ninja {#5273
+        id: 2,
+        created_at: "2024-11-21 14:18:03",
+        updated_at: "2024-11-21 14:18:03",
+        name: "yoshi",
+        skill: 60,
+        bio: "lorem Lauren Lauraine",
+      },
+    ],
+  }
+  
+# Find ninja with id=2
+Ninja::find(2)
+= App\Models\Ninja {#5270
+    id: 2,
+    created_at: "2024-11-21 14:18:03",
+    updated_at: "2024-11-21 14:18:03",
+    name: "yoshi",
+    skill: 60,
+    bio: "lorem Lauren Lauraine",
+  }
+
+```
