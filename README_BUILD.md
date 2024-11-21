@@ -213,7 +213,7 @@ Route::get('/ninjas/{id}', function ($id) {
 ```
 
 ```php
-# /views/components/index.php
+# /views/ninjas/index.php
 <x-layout>
     <h2>Currently available Laravel Ninjas</h2>
     @if ($greetings === 'Hello great warriors')
@@ -269,4 +269,49 @@ Route::get('/ninjas/{id}', function ($id) {
     # one can use $id to fetch record on the db
     return view('ninjas.ninja', ["id" => $id]);
 });
+```
+
+## 6 - Components attributes and props
+
+```php
+# /views/components/card.blade.php
+
+@props(['superNinja' => false, 'highlight' => false])
+
+<div @class([
+    'highlight' => $highlight,
+    'card',
+    'super-ninja' => $superNinja,
+])>
+    {{ $slot }}
+    <a href="{{ $attributes->get('href') }}" class="btn">View details</a>
+    {{-- OR --}}
+    <a {{ $attributes }} class="btn">View details</a>
+</div>
+```
+
+```php
+# /views/ninjas/index.blade.php
+
+<x-layout>
+    <h2>Currently available Laravel Ninjas</h2>
+
+    @if ($greetings === 'Hello great warriors')
+        <p>Hi from inside the if statement</p>
+    @endif
+
+    <p>{{ $greetings }}</p>
+
+    <p>Click in each warrior to see details</p>
+
+    <ul>
+        @foreach ($ninjas as $ninja)
+            <li>
+                <x-card href="ninjas/{{ $ninja['id'] }}" :superNinja="true" :highlight="$ninja['skill'] > 70">
+                    <h3>{{ $ninja['name'] }}</h3>
+                </x-card>
+            </li>
+        @endforeach
+    </ul>
+</x-layout>
 ```
