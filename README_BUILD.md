@@ -1025,4 +1025,55 @@ Route::get('/ninjas/{id}', function ($id) {
 
 ## 13 - More on Controllers
 
+### Complete logic for showOne ninja and rendering creating form
+
+```php
+<?php
+# /app/Http/Controllers/NinjaController.php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Ninja;
+
+class NinjaController extends Controller
+{
+    ...
+
+    public function showOne($id)
+    {
+        // route --> /ninjas/{id}
+        // fetch a single record & pass into show view
+        $ninja = Ninja::findOrFail($id);
+        return view('ninjas.ninja', ["ninja" => $ninja]);
+    }
+
+    public function create()
+    {
+        // route --> /ninjas/create
+        // render a create view (with web form) to users
+        return view('ninjas.create');
+    }
+    ...
+}
+```
+
+```php
+<?php
+# /routes/web.php
+
+use App\Http\Controllers\NinjaController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/ninjas', [NinjaController::class, 'index']);
+
+Route::get('/ninjas/create', [NinjaController::class, 'create']);
+
+Route::get('/ninjas/{id}', [NinjaController::class, 'showOne']);
+```
+
 ## 14 - Named Routes
