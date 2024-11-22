@@ -1077,3 +1077,75 @@ Route::get('/ninjas/{id}', [NinjaController::class, 'showOne']);
 ```
 
 ## 14 - Named Routes
+
+```php
+<?php
+# /routes/web.php 
+
+use App\Http\Controllers\NinjaController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/ninjas', [NinjaController::class, 'index'])->name('ninjas.index');
+
+Route::get('/ninjas/create', [NinjaController::class, 'create'])->name('ninjas.create');
+
+Route::get('/ninjas/{id}', [NinjaController::class, 'showOne'])->name('ninjas.showOne');
+```
+
+```php
+# index.blade.php
+
+<x-layout>
+    <h2>Currently available Laravel Ninjas</h2>
+
+    <p>Click in each warrior to see details</p>
+
+    <ul>
+        @foreach ($ninjas as $ninja)
+            <li>
+                <x-card href={{ route('ninjas.showOne', $ninja->id) }} :highlight="$ninja['skill'] > 70">
+                    <h3>{{ $ninja->name }}</h3>
+                </x-card>
+            </li>
+        @endforeach
+    </ul>
+</x-layout>
+```
+
+```php
+# layout.blade.php
+
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head>
+    @vite('resources/css/app.css')
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ninja Network</title>
+</head>
+
+<body>
+
+    <header>
+        <nav>
+            <h1>Ninja Network</h1>
+            <a href={{ route('ninjas.index') }}>See all warriors</a>
+            <br>
+            <a href={{ route('ninjas.create') }}>Add warrior</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        {{ $slot }}
+    </main>
+
+</body>
+
+</html>
+
+```
