@@ -445,7 +445,7 @@ php artisan migrate:rollback
 ### Create a Model, Migration, Factory and Seed
 
 ```sh
-# get some help for make:model
+# get some help for `php make:model`
 php artisan make:model --help
 
 # create a Model + Migration + Factory + Seed
@@ -461,10 +461,11 @@ php artisan make:model Ninja -mfs
    INFO  Seeder [database/seeders/NinjaSeeder.php] created successfully.  
 ```
 
-### update the create Ninjas table Migration Up() function
+### update the create Ninjas table Migration `up() function`
 
 ```php
 <?php
+# database/migrations/2024_11_21_133459_create_ninjas_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -502,25 +503,26 @@ return new class extends Migration
 # check status
 php artisan migrate:status
 
-  Migration name .................................................................................................................... Batch / Status  
-  0001_01_01_000000_create_users_table ..................................................................................................... [1] Ran  
-  0001_01_01_000001_create_cache_table ..................................................................................................... [1] Ran  
-  0001_01_01_000002_create_jobs_table ...................................................................................................... [1] Ran  
-  2024_11_21_121028_create_todos_table ..................................................................................................... [2] Ran  
-  2024_11_21_133459_create_ninjas_table .................................................................................................... Pending
+  Migration name ............................................................................. Batch / Status  
+  0001_01_01_000000_create_users_table .............................................................. [1] Ran  
+  0001_01_01_000001_create_cache_table .............................................................. [1] Ran  
+  0001_01_01_000002_create_jobs_table ............................................................... [1] Ran  
+  2024_11_21_121028_create_todos_table .............................................................. [2] Ran  
+  2024_11_21_133459_create_ninjas_table ............................................................. Pending
 
 # run the migration to the database
 php artisan migrate
 
    INFO  Running migrations.  
 
-  2024_11_21_133459_create_ninjas_table ................................................................................................ 7.27ms DONE
+  2024_11_21_133459_create_ninjas_table ......................................................... 7.27ms DONE
 ```
 
-### Working on the Model
+### Working on the `Ninja Model`
 
 ```php
 <?php
+# /app/Models/Ninja.php
 
 namespace App\Models;
 
@@ -536,7 +538,7 @@ class Ninja extends Model
 }
 ```
 
-### Play with tinker tool
+### Play with the `tinker tool`
 
 ```sh
 php artisan tinker
@@ -593,5 +595,65 @@ Ninja::find(2)
     skill: 60,
     bio: "lorem Lauren Lauraine",
   }
-
 ```
+
+## 10 - Model Factory
+
+### Populate the Ninja table with records
+
+- update `definition function` in NinjaFactory.php
+
+```php
+### 
+# /database/factories/NinjaFactory.php
+
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Ninja>
+ */
+class NinjaFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->name(),
+            'skill' => fake()->numberBetween(0, 100),
+            'bio' => fake()->realTextBetween(150, 300)
+        ];
+    }
+}
+```
+
+- run cmd
+
+```sh
+# access php artisan tinker
+php artisan tinker
+
+# then 
+> use App\Models\Ninja
+
+# then use the factory static method to create 100 ninjas
+> Ninja::factory()->count(100)->create()
+
+# then check the database to confirm creation
+/database/database.sqlite
+```
+
+## 11 - Seeders
+
+## 12 - MVC & Controllers
+
+## 13 - More on  Controllers
+
+## 14 - Named Routes
