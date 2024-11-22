@@ -599,12 +599,18 @@ Ninja::find(2)
 
 ## 10 - Model Factory
 
-### Populate the Ninja table with records
+### What is a Model Factory?
 
-- update `definition function` in NinjaFactory.php
+A model factory in Laravel is a convenient way to generate
+fake data for your application's database. It is often used
+for testing or quickly populating tables with realistic-looking
+records.
+
+### Populate the `Ninja` table with records
+
+**1- update `definition function` in NinjaFactory.php**
 
 ```php
-### 
 # /database/factories/NinjaFactory.php
 
 <?php
@@ -634,23 +640,159 @@ class NinjaFactory extends Factory
 }
 ```
 
-- run cmd
+**2- Generate Records Using `Tinker`**
+Use Laravel's Tinker console to interact with the database:
+
+- Access Tinker
 
 ```sh
-# access php artisan tinker
 php artisan tinker
-
-# then 
-> use App\Models\Ninja
-
-# then use the factory static method to create 100 ninjas
-> Ninja::factory()->count(100)->create()
-
-# then check the database to confirm creation
-/database/database.sqlite
 ```
 
+- Inside Tinker:
+
+```sh
+# Import the Ninja model
+> use App\Models\Ninja;
+
+# Generate 100 Ninja records
+> Ninja::factory()->count(100)->create();
+
+# Exit Tinker
+> exit;
+```
+
+**3 - Verify the Records in the Database**
+
+After running the factory, check the database to confirm
+the records were created:
+
+- For **SQLite**: Navigate to `/database/database.sqlite` and
+  open the file using a database browser like `DB Browser`
+  for SQLite or a similar tool.
+
+- For **MySQL/PostgreSQL**: Query the ninjas table using your
+  preferred database client:
+
+```sql
+SELECT * FROM ninjas;
+```
+
+###  Final Notes
+
+- **Fake Data**: The `fake()` helper generates realistic-looking
+  data for fields like names, numbers, and text.
+- **Count Method**: The **count(100)** method specifies the number
+  of records to create.
+
+- **Tinker Tips**: Use `php artisan tinker` to safely test models,
+  factories, and other Laravel features interactively.
+
 ## 11 - Seeders
+
+### What Are Seeders?
+
+- Seeders in Laravel are used to populate the database
+  with initial or test data automatically. They work
+  alongside model factories to create realistic records
+  for your tables, making it easy to set up your database
+  during development.
+
+- Seeders allow us to automatically use factory for a Model
+  along side with migration to seed data in our table on
+  creation
+
+### Updating the NinjaSeeder `run()` function
+
+- Modify the `NinjaSeeder` file to use the Ninja factory and
+  create 50 records:
+
+```php
+<?php
+
+# _11_Seeders/database/seeders/NinjaSeeder.php
+
+namespace Database\Seeders;
+
+use App\Models\Ninja;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class NinjaSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        Ninja::factory()->count(50)->create();
+    }
+}
+```
+
+### Linking Ninja factory to DatabaseSeeder
+
+- The DatabaseSeeder file is the entry point for all seeders.
+  
+- To include the NinjaSeeder, update its `run()` method:
+
+```php
+<?php
+# /database/seeders/DatabaseSeeder.php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        // User::factory(10)->create();
+
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+
+        # New
+        $this->call([ 
+            NinjaSeeder::class
+        ]);
+    }
+}
+```
+
+### Run the Seeder
+
+- To seed the database with fresh data:
+
+```sh
+# Drop all tables, recreate them, and run the seeders
+php artisan migrate:fresh --seed
+```
+
+### Final Notes
+
+- **migrate:fresh**: This command drops all database tables,
+  recreates them, and runs migrations, ensuring a clean slate
+  before seeding.
+
+- **Centralized Seeding**: Linking seeders to `DatabaseSeeder`
+  allows you to manage multiple seeders in one place.
+
+- **Custom Seeder Commands**: If needed, you can run a specific
+  seeder using
+
+```sh
+php artisan db:seed --class=NinjaSeeder
+
+```
 
 ## 12 - MVC & Controllers
 
