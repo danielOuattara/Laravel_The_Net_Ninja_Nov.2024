@@ -777,7 +777,7 @@ class DatabaseSeeder extends Seeder
 php artisan migrate:fresh --seed
 ```
 
-### Final Notes
+### Final Notes 11
 
 - **migrate:fresh**: This command drops all database tables,
   recreates them, and runs migrations, ensuring a clean slate
@@ -791,8 +791,143 @@ php artisan migrate:fresh --seed
 
 ```sh
 php artisan db:seed --class=NinjaSeeder
-
 ```
+
+### Update the whole model: adding `weapon` to all ninjas
+
+#### 1. Create the Migration File for `weapon` column
+
+```sh
+php artisan make:migration add_weapon_to_ninjas_table --table=ninjas
+```
+
+#### 2. Update the Migration File
+
+Open the newly created migration file in the `database/migrations/`
+directory and define the weapon column:
+
+```php
+# /database/migrations/2024_11_22_124717_add_weapon_to_ninjas_table.php
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('ninjas', function (Blueprint $table) {
+            $table->string('weapon')->nullable(); // Add the 'weapon' column
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('ninjas', function (Blueprint $table) {
+            $table->dropColumn('weapon'); // Remove the 'weapon' column
+        });
+    }
+};
+```
+
+#### 3. Run the migration
+
+```sh
+php artisan migrate
+```
+
+#### 4. Update the Seeder to Seed Only the weapon Column
+
+Modify or create a new seeder to update existing rows.
+Use Eloquent's `update()` method to set values for the weapon column.
+
+- make a new seeder
+
+```sh
+php artisan make:seeder NinjaWeaponSeeder
+```
+
+- Update the new seeder file:
+
+```php
+<?php
+# NinjaWeaponSeeder.php
+
+namespace Database\Seeders;
+
+use App\Models\Ninja;
+use Illuminate\Database\Seeder;
+
+class NinjaWeaponSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        Ninja::all()->each(function ($ninja) {
+            $ninja->update([
+                'weapon' => fake()->randomElement(['Katana', 'Shuriken', 'Bow', 'Nunchaku']),
+            ]);
+        });
+    }
+}
+```
+
+#### 5.Register the Seeder in DatabaseSeeder
+
+- Add the new seeder to the `DatabaseSeeder` file to ensure it’s run:
+
+```php
+#DatabaseSeeder.php
+
+public function run(): void
+{
+    $this->call([
+        NinjaWeaponSeeder::class,
+    ]);
+}
+```
+
+#### 6.Run the Seeder Without Recreating the Table
+
+- To only seed data without affecting migrations, use:
+
+```sh
+php artisan db:seed --class=NinjaWeaponSeeder
+```
+
+This will:
+
+- Leave the database structure intact.
+- Populate the weapon column for existing rows.
+
+#### 7.Optional: Verify the Changes
+
+Check your database to ensure that:
+
+- The weapon column is populated with values for existing rows.
+- Other table data remains unchanged.
+
+#### 8. Key Notes
+
+**Seed Specific Column**: You’re only modifying the `weapon` column,
+not the entire table.
+
+**Safety**: Ensure the migration for the new column uses `nullable()`
+to avoid issues during seeding.
+
+**Non-Destructive**: This approach doesn’t reset or recreate the
+database—only updates data in-place.
 
 ## 12 - MVC & Controllers
 
