@@ -19,12 +19,12 @@ class NinjaController extends Controller
         return view('ninjas.index', ['ninjas' => $ninjas]);
     }
 
-    public function showOne($id)
+    public function show($id)
     {
         // route --> /ninjas/{id}
         // fetch a single record & pass into show view
         $ninja = Ninja::findOrFail($id);
-        return view('ninjas.ninja', ["ninja" => $ninja]);
+        return view('ninjas.show', ["ninja" => $ninja]);
     }
 
     public function create()

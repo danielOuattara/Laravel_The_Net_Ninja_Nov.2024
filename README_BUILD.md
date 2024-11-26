@@ -1093,7 +1093,7 @@ Route::get('/ninjas', [NinjaController::class, 'index'])->name('ninjas.index');
 
 Route::get('/ninjas/create', [NinjaController::class, 'create'])->name('ninjas.create');
 
-Route::get('/ninjas/{id}', [NinjaController::class, 'showOne'])->name('ninjas.showOne');
+Route::get('/ninjas/{id}', [NinjaController::class, 'show'])->name('ninjas.show');
 ```
 
 ```php
@@ -1107,7 +1107,7 @@ Route::get('/ninjas/{id}', [NinjaController::class, 'showOne'])->name('ninjas.sh
     <ul>
         @foreach ($ninjas as $ninja)
             <li>
-                <x-card href={{ route('ninjas.showOne', $ninja->id) }} :highlight="$ninja['skill'] > 70">
+                <x-card href="{{ route('ninjas.show', $ninja->id) }}" :highlight="$ninja['skill'] > 70">
                     <h3>{{ $ninja->name }}</h3>
                 </x-card>
             </li>
