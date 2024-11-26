@@ -1804,3 +1804,148 @@ class NinjaFactory extends Factory
 ```sh
 php artisan migrate: fresh --seed
 ```
+
+## 17 - Foreign key - many-to-one, part 2
+
+**One more thing to do**: We need to let the Models know about the relationships
+  between tables: connect them; so that Eloquent ORM use them effectively
+
+### Update the Dojo Model
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Dojo extends Model
+{
+    protected $fillable = ["name", "location", "description"];
+    /** @use HasFactory<\Database\Factories\DojoFactory> */
+    use HasFactory;
+
+    public function ninjas()
+    {
+        return $this->hasMany(Ninja::class);
+    }
+
+    // $dojo->ninjas->name: is now possible
+}
+```
+
+### Update the Ninja Model
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Ninja extends Model
+{
+    protected $fillable = ["name", "skill", "bio"];
+    /** @use HasFactory<\Database\Factories\NinjaFactory> */
+    use HasFactory;
+
+    public function dojo()
+    {
+        return $this->belongsTo(Dojo::class);
+    }
+
+
+    // $ninja->dojo->name: is now possible
+}
+```
+
+### Show related data in `ninja.index.php` (lazy loading)
+
+```php
+<x-layout>
+    <h2>Currently available Laravel Ninjas</h2>
+
+    <p>Click in each warrior to see details</p>
+
+    <ul>
+        @foreach ($ninjas as $ninja)
+            <li>
+                <x-card href="{{ route('ninjas.show', $ninja->id) }}" :highlight="$ninja['skill'] > 70">
+                    {{-- <h3>{{ $ninja->name }}</h3> --}}
+                    <div>
+                        <h3>{{ $ninja->name }}</h3>
+                        <p>{{ $ninja->dojo->name }}</p>
+                    </div>
+                </x-card>
+            </li>
+        @endforeach
+    </ul>
+
+    {{ $ninjas->links() }}
+</x-layout>
+```
+
+### Show related data in `ninja.index.php` (eager loading)
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Ninja;
+
+class NinjaController extends Controller
+{
+    public function index()
+    {
+        // route --> /ninjas/
+        // $ninjas = Ninja::orderBy('created_at', 'desc')->paginate(10);
+
+        # eager loading
+        $ninjas = Ninja::with('dojo')->orderBy('created_at', 'desc')->paginate(10);
+
+        return view('ninjas.index', ['ninjas' => $ninjas]);
+    }
+
+    public function show($id)
+    {
+        // route --> /ninjas/{id}
+        // $ninja = Ninja::findOrFail($id);
+
+        # eager loading
+        $ninja = Ninja::with('dojo')->findOrFail($id);
+        return view('ninjas.show', ["ninja" => $ninja]);
+    }
+
+    # ...
+}
+```
+
+### Update the `show.blade.php`
+
+```php
+# /resources/views/ninjas/show.blade.php
+
+<x-layout>
+    <h2>{{ $ninja->name }}'s Profile</h2>
+
+    <div class="bg-gray-200 p-4 rounded">
+        <p><strong>Level: </strong> {{ $ninja->skill }}</p>
+        <p><strong>Weapon: </strong> {{ $ninja->weapon }}</p>
+        <p><strong>About me: </strong></p>
+        <p>{{ $ninja->bio }}</p>
+    </div>
+
+    {{-- Dojo info --}}
+    <div class="border-2 border-dashed bg-white px-4 pb-4 rounded">
+        <h3>Dojo Information</h3>
+        <p><strong>Dojo name: </strong>{{ $ninja->dojo->name }}</p>
+        <p><strong>Location: </strong>{{ $ninja->dojo->location }}</p>
+        <p><strong>About the Dojo: </strong></p>
+        <p>{{ $ninja->dojo->description }}</p>
+    </div>
+</x-layout>
+```
