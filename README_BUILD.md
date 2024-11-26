@@ -662,7 +662,7 @@ php artisan tinker
 > exit;
 ```
 
-**3 - Verify the Records in the Database**
+**3- Verify the Records in the Database**
 
 After running the factory, check the database to confirm
 the records were created:
@@ -1200,4 +1200,607 @@ class NinjaController extends Controller
 
     {{ $ninjas->links() }}
 </x-layout>
+```
+
+## 16 - Foreign key - many-to-one, part 1
+
+### create a Model + Migration + Factory + Seed
+
+```sh
+php artisan make:model Dojo -mfs
+```
+
+### update the dojo first migration file
+
+```php
+# /database/migrations/2024_11_26_073400_create_dojos_table.php
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('dojos', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+            $table->string('name');
+            $table->text('description');
+            $table->string('location');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('dojos');
+    }
+};
+```
+
+### Run the migration for Dojo
+
+```sh
+php artisan migrate
+```
+
+### update the Dojo's Model: add fillable
+
+```php
+<?php
+
+# /app/Models/Dojo.php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Dojo extends Model
+{
+    protected $fillable = ["name", "location", "description"];
+    /** @use HasFactory<\Database\Factories\DojoFactory> */
+    use HasFactory;
+}
+```
+
+###  update the Dojo's factory
+
+```php
+<?php
+# /database/factories/DojoFactory.php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Dojo>
+ */
+class DojoFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            "name" => fake()->company(),
+            "location" => fake()->city(),
+            "description" => fake()->paragraph(5)
+        ];
+    }
+}
+```
+
+###  update the Dojo's seeder
+
+```php
+<?php
+#  /database/seeders/DojoSeeder.php
+
+namespace Database\Seeders;
+
+use App\Models\Dojo;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DojoSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        Dojo::factory()->count(10)->create();
+    }
+}
+```
+
+### update the DatabaseSeeder
+
+```php
+<?php
+# /database/seeders/DatabaseSeeder.php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        // User::factory(10)->create();
+
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+
+        $this->call([
+            NinjaSeeder::class
+        ]);
+
+        $this->call([
+            NinjaWeaponSeeder::class,
+        ]);
+
+        # new !
+        $this->call([
+            DojoSeeder::class,
+        ]);
+    }
+}
+```
+
+### Run the DojoSeeder
+
+```sh
+php artisan db:seed --class=DojoSeeder
+```
+
+### Create the Migration File for `dojo_id` column
+
+```sh
+php artisan make:migration add_dojo_id_to_ninjas_table --table=ninjas
+```
+
+### Update the newly created migration file
+
+```php
+# /database/migrations/2024_11_26_081753_add_dojo_id_to_ninjas_table.php
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('ninjas', function (Blueprint $table) {
+$table->foreignId('dojo_id')->nullable()->constrained()->onDelete('cascade');
+
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('ninjas', function (Blueprint $table) {
+            $table->dropColumn('dojo_id'); // Remove the 'weapon' column
+        });
+    }
+};
+```
+
+### Run the migration for Ninja
+
+```sh
+php artisan migrate
+```
+
+### Update the Seeder to Seed Only the `dojo_id` Column
+
+Modify or create a new seeder to update existing rows.
+Use Eloquent's `update()` method to set values for the `dojo_id` column.
+
+- make a new seeder
+
+```sh
+php artisan make:seeder NinjaDojoIdSeeder
+```
+
+### Update the newly created NinjaDojoIdSeeder
+
+```php
+# /database/seeders/NinjaDojoIdSeeder.php
+
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Dojo;
+use App\Models\Ninja;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class NinjaDojoIdSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        Ninja::all()->each(function ($ninja) {
+            $ninja->update([
+                'dojo_id' => Dojo::inRandomOrder()->first()->id
+            ]);
+        });
+    }
+}
+```
+
+### Register the NinjaDojoIdSeeder in DatabaseSeeder
+
+```php
+<?php
+# /database/seeders/DatabaseSeeder.php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        // User::factory(10)->create();
+
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+
+        $this->call([
+            NinjaSeeder::class
+        ]);
+
+        $this->call([
+            NinjaWeaponSeeder::class,
+        ]);
+
+        # new !
+        $this->call([
+            DojoSeeder::class,
+        ]);
+        # new !
+        $this->call([
+            NinjaDojoIdSeeder::class,
+        ]);
+    }
+}
+```
+
+### Run the NinjaDojoIdSeeder Without Recreating the Table
+
+- To only seed data without affecting migrations, use:
+
+```sh
+php artisan db:seed --class=NinjaDojoIdSeeder
+```
+
+### Create a migration to make Ninja's dojo_id column not nullable
+
+```sh
+php artisan make:migration make_dojo_id_non_nullable --table=ninjas
+```
+
+### Update the migration code
+
+```php
+# /database/migrations/2024_11_26_090817_make_dojo_id_non_nullable.php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('ninjas', function (Blueprint $table) {
+            $table->foreignId('dojo_id')->nullable(false)->change(); // Make the column not nullable
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('ninjas', function (Blueprint $table) {
+            $table->foreignId('dojo_id')->nullable()->change(); // Revert to nullable
+        });
+    }
+};
+```
+
+### Ensure some packages are present
+
+Laravel requires the `change()` method for modifying existing
+columns. Ensure the `doctrine/dbal` package is installed, as
+it is required for column modifications:
+
+```sh
+composer require doctrine/dbal
+```
+
+### Run the migration
+
+```sh
+php artisan migrate
+```
+
+### Another solution for creating  many-to-one relation and feeding all tables in one go
+
+- create a Model + Migration + Factory + Seed
+
+```sh
+php artisan make:model Dojo -mfs
+```
+
+- update the migration for creating Dojo
+
+```php
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     *Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('dojos', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+            $table->string('name');
+            $table->text('description');
+            $table->string('location');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('dojos');
+    }
+};
+```
+
+- update the Dojo Model
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Dojo extends Model
+{
+    protected $fillable = ["name", "location", "description"];
+    /** @use HasFactory<\Database\Factories\DojoFactory> */
+    use HasFactory;
+}
+```
+
+- update the DojoFactory
+
+```php
+
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Dojo>
+ */
+class DojoFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            "name" => fake()->company(),
+            "location" => fake()->city(),
+            "description" => fake()->paragraph(5)
+        ];
+    }
+}
+```
+
+- update the DojoSeeder
+
+```php
+
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Dojo;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DojoSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        Dojo::factory()->count(10)->create();
+    }
+}
+```
+
+- update the DatabaseSeeder
+
+```php
+
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        // User::factory(10)->create();
+
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+
+        # new !
+        $this->call([
+            DojoSeeder::class, # <-- DojoSeeder MUST be placed here before NinjaSeeder
+            NinjaSeeder::class,
+        ]);
+    }
+}
+```
+
+- create the relationship between Dojo & Ninja: update Ninja initial migration file
+
+```php
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('ninjas', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+            $table->string('name');
+            $table->integer('skill');
+            $table->text('bio');
+            $table->foreignId('dojo_id')->constrained()->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('ninjas');
+    }
+};
+```
+
+- update the NinjaFactory, to be able to also auto-feed `dojo_id` in ninjas table as well as other column
+
+```php
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Dojo;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Ninja>
+ */
+class NinjaFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        $dojoIds = Dojo::pluck('id')->toArray();
+
+        return [
+            'name' => fake()->name(),
+            'skill' => fake()->numberBetween(0, 100),
+            'bio' => fake()->realTextBetween(150, 300),
+            // 'dojo_id' => Dojo::inRandomOrder()->first()->id
+            'dojo_id' => fake()->randomElement($dojoIds), # Better for large data
+        ];
+    }
+}
+```
+
+- run a fresh migration and seed
+
+```sh
+php artisan migrate: fresh --seed
 ```
